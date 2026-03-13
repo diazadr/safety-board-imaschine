@@ -1,65 +1,168 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+import { useState, useEffect } from "react";
+import { ref, onValue } from "firebase/database";
+import { db } from "../lib/firebase";
+import { AlertTriangle, ShieldPlus } from "lucide-react";
+import { SafetyData } from "../types";
+
+export default function DisplayBoard() {
+    const [days, setDays] = useState<number>(0);
+    const [startDateMs, setStartDateMs] = useState<number | null>(null);
+    const [now, setNow] = useState<Date | null>(null);
+
+    const KELIPATAN_STREAK = 30;
+    const dbRef = ref(db, "safety_board/imaschine_lab/current");
+
+    // # Mengambil Data dari Firebase dan Set Jam Real-time
+    useEffect(() => {
+        setNow(new Date());
+
+        const unsubData = onValue(dbRef, (snapshot) => {
+            const data = snapshot.val() as SafetyData | null;
+            if (data) {
+                setStartDateMs(data.startDate);
+                const current = new Date().getTime();
+                const diff = Math.max(0, current - data.startDate);
+                setDays(Math.floor(diff / (1000 * 60 * 60 * 24)));
+            }
+        });
+
+        const interval = setInterval(() => {
+            setNow(new Date());
+            setStartDateMs((prevStart) => {
+                if (prevStart) {
+                    const diff = Math.max(0, new Date().getTime() - prevStart);
+                    setDays(Math.floor(diff / (1000 * 60 * 60 * 24)));
+                }
+                return prevStart;
+            });
+        }, 1000);
+
+        return () => {
+            unsubData();
+            clearInterval(interval);
+        };
+    }, []);
+
+    // # Memformat Tampilan Jam dan Tanggal
+    const formatTime = now
+        ? now.toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+          })
+        : "00:00:00";
+
+    const formatDay = now
+        ? now.toLocaleDateString("id-ID", { weekday: "long" })
+        : "Hari";
+
+    const formatDate = now
+        ? now.toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+          })
+        : "Tanggal";
+
+    const formattedStartDate = startDateMs
+        ? new Date(startDateMs).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+          })
+        : "...";
+
+    // # Menghitung Milestone Pencapaian Streak
+    const currentStreakMilestone =
+        Math.floor(days / KELIPATAN_STREAK) * KELIPATAN_STREAK;
+
+    return (
+        <div className="font-chakra min-h-screen flex flex-col justify-between p-4 md:p-8 bg-[#0a0e17] text-white border-4 border-[#00ff88] shadow-[inset_0_0_50px_rgba(0,255,136,0.15)] overflow-hidden">
+            <header className="flex flex-col xl:flex-row justify-between items-center border-b-2 border-slate-800 pb-4 gap-6 xl:gap-4">
+                <div className="flex items-center gap-4 md:gap-6">
+                    {/* Logo Polman */}
+                    <div className="h-16 w-16 md:h-24 md:w-24 relative flex-shrink-0">
+                        <img
+                            src="/logo-polman.png"
+                            alt="Logo Polman Bandung"
+                            className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                        />
+                    </div>
+
+                    <div className="text-center xl:text-left">
+                        <h1 className="text-3xl md:text-5xl font-bold uppercase tracking-widest text-white">
+                            I Maschine Lab
+                        </h1>
+                        <h2 className="text-slate-400 text-lg md:text-xl tracking-wider mt-1">
+                            Politeknik Manufaktur Bandung
+                        </h2>
+                    </div>
+
+                    {/* Logo Lab */}
+                    <div className="h-16 w-16 md:h-24 md:w-24 relative flex-shrink-0">
+                        <img
+                            src="/logo-imaschine.png"
+                            alt="Logo I Maschine Lab"
+                            className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                        />
+                    </div>
+                </div>
+
+                <div className="text-center xl:text-right bg-slate-900/50 px-6 py-3 rounded-xl border border-slate-800 shadow-inner">
+                    <div className="text-3xl md:text-4xl font-bold text-[#00ff88] tracking-widest mb-1 drop-shadow-md">
+                        {formatTime} WIB
+                    </div>
+                    <div className="text-lg md:text-xl text-slate-300 font-semibold uppercase tracking-wider">
+                        {formatDay}, {formatDate}
+                    </div>
+                </div>
+            </header>
+
+            <main className="flex-grow flex flex-col justify-center items-center text-center my-4">
+                <h3 className="text-3xl md:text-5xl uppercase tracking-[0.3em] text-slate-300 font-semibold mb-2">
+                    Bekerja Tanpa Kecelakaan
+                </h3>
+
+                <div className="text-[22vh] md:text-[35vh] font-bold leading-none text-[#00ff88] drop-shadow-[0_0_50px_rgba(0,255,136,0.6)] my-2">
+                    {days}
+                </div>
+
+                <div className="text-4xl md:text-6xl uppercase tracking-[0.2em] text-slate-400 font-semibold mb-8">
+                    Hari
+                </div>
+
+                <div className="flex flex-col items-center gap-6 mt-2 h-[100px]">
+                    {currentStreakMilestone > 0 ? (
+                        <div className="bg-[#00ff88]/10 border-2 border-[#00ff88] px-8 py-3 rounded-full flex items-center gap-4 shadow-[0_0_25px_rgba(0,255,136,0.3)] animate-pulse">
+                            <ShieldPlus size={32} className="text-[#00ff88]" />
+                            <span className="text-[#00ff88] font-bold text-xl md:text-3xl tracking-widest whitespace-nowrap">
+                                PENCAPAIAN K3: {currentStreakMilestone} HARI
+                                AMAN
+                            </span>
+                            <ShieldPlus size={32} className="text-[#00ff88]" />
+                        </div>
+                    ) : (
+                        <div className="h-[60px] w-full"></div>
+                    )}
+
+                    <div className="bg-slate-900/80 px-6 py-2 rounded-full border border-slate-700 text-slate-300 text-lg md:text-xl tracking-wider inline-flex items-center gap-2">
+                        <span className="text-slate-400">Mulai sejak:</span>
+                        <strong className="text-[#00ff88]">
+                            {formattedStartDate}
+                        </strong>
+                    </div>
+                </div>
+            </main>
+
+            <footer className="flex justify-center items-center border-t border-slate-800 pt-6 mt-2">
+                <div className="flex items-center gap-3 text-[#FFD700] drop-shadow-[0_0_15px_rgba(255,215,0,0.5)] font-bold text-2xl md:text-4xl uppercase tracking-widest">
+                    <AlertTriangle size={36} className="animate-pulse" />
+                    <span>UTAMAKAN KESELAMATAN DAN KESEHATAN KERJA</span>
+                    <AlertTriangle size={36} className="animate-pulse" />
+                </div>
+            </footer>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    );
 }
