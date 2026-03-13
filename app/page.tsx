@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ref, onValue } from "firebase/database";
 import { db } from "../lib/firebase";
-import { AlertTriangle, ShieldPlus } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { SafetyData } from "../types";
 
 export default function DisplayBoard() {
@@ -11,10 +11,9 @@ export default function DisplayBoard() {
     const [startDateMs, setStartDateMs] = useState<number | null>(null);
     const [now, setNow] = useState<Date | null>(null);
 
-    const KELIPATAN_STREAK = 30;
     const dbRef = ref(db, "safety_board/imaschine_lab/current");
 
-    // # Mengambil Data dari Firebase dan Set Jam Real-time
+    // # Mengambil Data Realtime dan Set Jam
     useEffect(() => {
         setNow(new Date());
 
@@ -45,7 +44,6 @@ export default function DisplayBoard() {
         };
     }, []);
 
-    // # Memformat Tampilan Jam dan Tanggal
     const formatTime = now
         ? now.toLocaleTimeString("id-ID", {
               hour: "2-digit",
@@ -74,24 +72,21 @@ export default function DisplayBoard() {
           })
         : "...";
 
-    // # Menghitung Milestone Pencapaian Streak
-    const currentStreakMilestone =
-        Math.floor(days / KELIPATAN_STREAK) * KELIPATAN_STREAK;
-
     return (
         <div className="font-chakra min-h-screen flex flex-col justify-between p-4 md:p-8 bg-[#0a0e17] text-white border-4 border-[#00ff88] shadow-[inset_0_0_50px_rgba(0,255,136,0.15)] overflow-hidden">
             <header className="flex flex-col xl:flex-row justify-between items-center border-b-2 border-slate-800 pb-4 gap-6 xl:gap-4">
                 <div className="flex items-center gap-4 md:gap-6">
-                    {/* Logo Polman */}
+                    {/* Logo I Maschine (Di Kiri) */}
                     <div className="h-16 w-16 md:h-24 md:w-24 relative flex-shrink-0">
                         <img
-                            src="/logo-polman.png"
-                            alt="Logo Polman Bandung"
+                            src="/logo-imaschine.png"
+                            alt="Logo I Maschine Lab"
                             className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
                         />
                     </div>
 
-                    <div className="text-center xl:text-left">
+                    {/* Teks Selalu di Tengah */}
+                    <div className="text-center px-2 md:px-4">
                         <h1 className="text-3xl md:text-5xl font-bold uppercase tracking-widest text-white">
                             I Maschine Lab
                         </h1>
@@ -100,11 +95,11 @@ export default function DisplayBoard() {
                         </h2>
                     </div>
 
-                    {/* Logo Lab */}
+                    {/* Logo K3 .webp (Di Kanan) */}
                     <div className="h-16 w-16 md:h-24 md:w-24 relative flex-shrink-0">
                         <img
-                            src="/logo-imaschine.png"
-                            alt="Logo I Maschine Lab"
+                            src="/logo-k3.webp"
+                            alt="Logo K3"
                             className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
                         />
                     </div>
@@ -133,26 +128,11 @@ export default function DisplayBoard() {
                     Hari
                 </div>
 
-                <div className="flex flex-col items-center gap-6 mt-2 h-[100px]">
-                    {currentStreakMilestone > 0 ? (
-                        <div className="bg-[#00ff88]/10 border-2 border-[#00ff88] px-8 py-3 rounded-full flex items-center gap-4 shadow-[0_0_25px_rgba(0,255,136,0.3)] animate-pulse">
-                            <ShieldPlus size={32} className="text-[#00ff88]" />
-                            <span className="text-[#00ff88] font-bold text-xl md:text-3xl tracking-widest whitespace-nowrap">
-                                PENCAPAIAN K3: {currentStreakMilestone} HARI
-                                AMAN
-                            </span>
-                            <ShieldPlus size={32} className="text-[#00ff88]" />
-                        </div>
-                    ) : (
-                        <div className="h-[60px] w-full"></div>
-                    )}
-
-                    <div className="bg-slate-900/80 px-6 py-2 rounded-full border border-slate-700 text-slate-300 text-lg md:text-xl tracking-wider inline-flex items-center gap-2">
-                        <span className="text-slate-400">Mulai sejak:</span>
-                        <strong className="text-[#00ff88]">
-                            {formattedStartDate}
-                        </strong>
-                    </div>
+                <div className="bg-slate-900/80 px-6 py-2 rounded-full border border-slate-700 text-slate-300 text-lg md:text-xl tracking-wider inline-flex items-center gap-2 mt-4">
+                    <span className="text-slate-400">Mulai sejak:</span>
+                    <strong className="text-[#00ff88]">
+                        {formattedStartDate}
+                    </strong>
                 </div>
             </main>
 
